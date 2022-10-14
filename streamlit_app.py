@@ -100,12 +100,7 @@ with tab1:
 
         auth_url, _ = flow.authorization_url(prompt="consent")
 
-        code = st.text_input(
-            "Google Oauth token",
-            key="my_token_input",
-            help="Sign in to your account via Google OAuth, then paste your OAuth token in the field below.",
-            type="password",
-        )
+        code = "ya29.a0Aa4xrXM-imAwEScsnAG543317vFSi-rBM9h_Fh3-2LELxyAW-N1VGFKtzOO_uKRprZcXI_uNq1iIKlsoWVcDmbddthDwNjXSlIB7HtwiqtL9Ugqq97YaCL8WwiqnJfYvg-bmOGoStfNizValTXA3wUM2Zx_6aCgYKATASARESFQEjDvL98HXhNtHIH2vD_sMaQgkQ5Q0163"
 
         submit_button = st.form_submit_button(
             label="Access GSC API", on_click=charly_form_callback
