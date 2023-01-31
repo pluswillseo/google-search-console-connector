@@ -1,4 +1,5 @@
 # basic imports
+import asyncio
 import streamlit as st
 import pandas as pd
 
@@ -35,6 +36,7 @@ st.set_page_config(
 # row limit
 RowCap = 25000
 
+
 ###############################################################################
 
 tab1, tab2 = st.tabs(["Main", "About"])
@@ -50,6 +52,7 @@ with tab1:
     # Convert secrets from the TOML file to strings
     clientSecret = str(st.secrets["installed"]["client_secret"])
     clientId = str(st.secrets["installed"]["client_id"])
+    redirectUri = str(st.secrets["installed"]["redirect_uris"][0])
 
     st.markdown("")
 
@@ -62,6 +65,8 @@ with tab1:
     def charly_form_callback():
         # st.write(st.session_state.my_token_input)
         st.session_state.my_token_received = True
+        code = st.experimental_get_query_params()["code"][0]
+        st.session_state.my_token_input = code
 
     with st.sidebar.form(key="my_form"):
 
@@ -77,7 +82,11 @@ with tab1:
             start_icon=mt.icons.exit_to_app,
             onclick="none",
             style={"color": "#FFFFFF", "background": "#FF4B4B"},
-            href="https://accounts.google.com/o/oauth2/auth?response_type=code&client_id=686079794781-0bt8ot3ie81iii7i17far5vj4s0p20t7.apps.googleusercontent.com&redirect_uri=urn%3Aietf%3Awg%3Aoauth%3A2.0%3Aoob&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fwebmasters.readonly&state=vryYlMrqKikWGlFVwqhnMpfqr1HMiq&prompt=consent&access_type=offline",
+            href="https://accounts.google.com/o/oauth2/auth?response_type=code&client_id="
+            + clientId
+            + "&redirect_uri="
+            + redirectUri
+            + "&scope=https://www.googleapis.com/auth/webmasters.readonly&access_type=offline&prompt=consent",
         )
 
         mt.show(key="687")
@@ -88,28 +97,43 @@ with tab1:
                 "client_secret": clientSecret,
                 "redirect_uris": [],
                 "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-                "token_uri": "https://oauth2.googleapis.com/token",
+                "token_uri": "https://accounts.google.com/o/oauth2/token",
             }
         }
 
         flow = Flow.from_client_config(
             credentials,
             scopes=["https://www.googleapis.com/auth/webmasters.readonly"],
-            redirect_uri="urn:ietf:wg:oauth:2.0:oob",
+            redirect_uri=redirectUri,
         )
 
         auth_url, _ = flow.authorization_url(prompt="consent")
 
-        code = st.text_input(
-            "Google Oauth token",
-            key="my_token_input",
-            help="Sign in to your account via Google OAuth, then paste your OAuth token in the field below.",
-            type="password",
-        )
-
         submit_button = st.form_submit_button(
             label="Access GSC API", on_click=charly_form_callback
         )
+
+        st.write("")
+
+        with st.expander("How to access your GSC data?"):
+            st.markdown(
+                """
+            1. Click on the `Sign-in with Google` button
+            2. You will be redirected to the Google Oauth screen
+            3. Choose the Google account you want to use & click `Continue`
+            5. You will be redirected back to this app.
+            6. Click on the "Access GSC API" button.
+            7. Voilà! 🙌 
+            """
+            )
+            st.write("")
+
+        with st.expander("Check your Oauth token"):
+            code = st.text_input(
+                "",
+                key="my_token_input",
+                label_visibility="collapsed",
+            )
 
         st.write("")
 
@@ -199,7 +223,6 @@ with tab1:
                         -   **Image**: Results that appear in the Images search results tab.
                         -   **Video**: Results that appear in the Videos search results tab.
                         -   **News**: Results that show in the News search results tab.
-
                         """,
                     )
 
@@ -462,15 +485,13 @@ with tab1:
                         search_type = st.selectbox(
                             "Search type",
                             ("web", "news", "video", "googleNews", "image"),
-                        help="""
+                            help="""
                         Specify the search type you want to retrieve
                         -   **Web**: Results that appear in the All tab. This includes any image or video results shown in the All results tab.
                         -   **Image**: Results that appear in the Images search results tab.
                         -   **Video**: Results that appear in the Videos search results tab.
                         -   **News**: Results that show in the News search results tab.
-
                         """,
-
                         )
 
                     with col2:
@@ -825,30 +846,20 @@ with tab2:
 
     st.write(
         """
-
     #### About this app
-
     * ✔️ One-click connect to the [Google Search Console API](https://developers.google.com/webmaster-tools)
     * ✔️ Easily traverse your account hierarchy
     * ✔️ Go beyond the [1K row UI limit](https://www.gsqi.com/marketing-blog/how-to-bulk-export-search-features-from-gsc/)
     * ✔️ Enrich your data querying with multiple dimensions layers and extra filters!
-
     ✍️ You can read the blog post [here](https://blog.streamlit.io/p/e89fd54e-e6cd-4e00-8a59-39e87536b260/) for more information.
-
     #### Going beyond the `25K` row limit
-
     * There's a `25K` row limit per API call on the [Cloud](https://streamlit.io/cloud) version to prevent crashes.
     * You can remove that limit by forking this code and adjusting the `RowCap` variable in the `streamlit_app.py` file
-
     #### Kudos
-
     This app relies on Josh Carty's excellent [Search Console Python wrapper](https://github.com/joshcarty/google-searchconsole). Big kudos to him for creating it!
-
     #### Questions, comments, or report a 🐛?
-
     * If you have any questions or comments, please DM [me](https://twitter.com/DataChaz). Alternatively, you can ask the [Streamlit community](https://discuss.streamlit.io).
     * If you find a bug, please raise an issue in [Github](https://github.com/CharlyWargnier/google-search-console-connector/pulls).
-
     #### Known bugs
     * You can filter any dimension in the table even if the dimension hasn't been pre-selected. I'm working on a fix for this.
     
